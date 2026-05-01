@@ -336,7 +336,7 @@
         await auth.signInAnonymously();
         setCloudStatus('online');
 
-        db.collection('inventory').onSnapshot(snapshot => {
+        db.collection('inventory').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
             inventory = snapshot.docs.map(doc => ({ fid: doc.id, ...doc.data() })) || [];
             renderInventory();
             updateStats();
