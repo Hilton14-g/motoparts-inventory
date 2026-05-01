@@ -231,7 +231,7 @@
                         <input type="text" id="inv-name" placeholder="Nombre (ej. Filtro Aire)" required>
                         <input type="number" id="inv-price" placeholder="Precio Venta S/" step="0.10" required>
                         <input type="number" id="inv-stock" placeholder="Stock Inicial" required>
-                        <button type="submit" class="btn-red">Registrar en Nube</button>
+                        <button type="submit" class="btn-red">Registrar</button>
                     </form>
                 </div>
 
@@ -241,7 +241,7 @@
                         <table>
                             <thead>
                                 <tr>
-                                    <th>ID Firestore</th>
+                                    <th>ID</th>
                                     <th>Nombre del Item</th>
                                     <th>Precio</th>
                                     <th>Cantidad</th>
@@ -304,8 +304,34 @@
     let inventory = [];
     let salesHistory = [];
 
+    // Check if it's a new day and reset sales if needed
+    function checkNewDay() {
+        const today = new Date().toDateString();
+        const lastDate = localStorage.getItem('lastSalesDate');
+        
+        if (lastDate !== today) {
+            // New day, clear local sales history
+            salesHistory = [];
+            localStorage.setItem('lastSalesDate', today);
+            localStorage.setItem('salesHistory', JSON.stringify(salesHistory));
+        } else {
+            // Same day, load from localStorage
+            const savedSales = localStorage.getItem('salesHistory');
+            if (savedSales) {
+                salesHistory = JSON.parse(savedSales);
+            }
+        }
+    }
+
+    function saveSalesToLocalStorage() {
+        localStorage.setItem('salesHistory', JSON.stringify(salesHistory));
+        localStorage.setItem('lastSalesDate', new Date().toDateString());
+    }
+
     // --- CORE ENGINE (Real-time Sync) ---
     async function startSystem() {
+        // Check for new day on startup
+        checkNewDay();
     try {
         await auth.signInAnonymously();
         setCloudStatus('online');
@@ -321,7 +347,20 @@
 
         // Escuchar ventas en tiempo real
         db.collection('sales').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
-            salesHistory = snapshot.docs.map(doc => doc.data()) || [];
+            const firebaseSales = snapshot.docs.map(doc => doc.data()) || [];
+            // Merge with localStorage sales (combine both sources)
+            const localSales = JSON.parse(localStorage.getItem('salesHistory') || '[]');
+            salesHistory = [...firebaseSales, ...localSales];
+            // Remove duplicates based on timestamp
+            const uniqueSales = [];
+            const seenTimestamps = new Set();
+            for (const sale of salesHistory) {
+                if (!seenTimestamps.has(sale.timestamp)) {
+                    seenTimestamps.add(sale.timestamp);
+                    uniqueSales.push(sale);
+                }
+            }
+            salesHistory = uniqueSales.sort((a, b) => b.createdAt - a.createdAt);
             renderDashboard();
             updateStats();
         }, err => {
@@ -455,13 +494,20 @@
 
         // Atomic Transaction (Simulado)
         await db.collection('inventory').doc(id).update({ stock: product.stock - qty });
-        await db.collection('sales').add({
+        
+        const sale = {
             productName: product.name,
             quantity: qty,
             total: total,
             timestamp: new Date().toLocaleString(),
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        };
+        
+        await db.collection('sales').add(sale);
+        
+        // Also save to localStorage
+        salesHistory.unshift(sale);
+        saveSalesToLocalStorage();
 
         alert("Venta Completada con Éxito");
         document.getElementById('sale-quantity').value = 1;
