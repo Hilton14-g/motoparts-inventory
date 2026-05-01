@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MotoParts Dashboard</title>
+    <title>MotoParts Dashboard | Gestión Profesional</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -24,6 +24,7 @@
             overflow: hidden;
         }
 
+        /* Estilos de la Barra Lateral */
         .sidebar {
             background-color: var(--sidebar-bg);
             width: 260px;
@@ -54,10 +55,16 @@
             border-left: 4px solid var(--accent-red);
         }
 
+        /* Componentes de Tarjetas */
         .card {
             background-color: #161616;
             border: 1px solid #333;
             border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
         }
 
         .btn-red {
@@ -66,22 +73,31 @@
             padding: 0.5rem 1rem;
             border-radius: 4px;
             transition: 0.3s;
+            font-weight: bold;
+            cursor: pointer;
         }
 
         .btn-red:hover {
             background-color: #cc0000;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
         }
 
+        /* Inputs Personalizados */
         input, select {
             background-color: #222 !important;
             border: 1px solid #444 !important;
             color: white !important;
             padding: 0.5rem;
             border-radius: 4px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent-red) !important;
         }
 
         .table-container {
-            max-height: 400px;
+            max-height: 450px;
             overflow-y: auto;
         }
 
@@ -96,6 +112,9 @@
             top: 0;
             text-align: left;
             padding: 12px;
+            font-size: 0.85rem;
+            color: #888;
+            text-transform: uppercase;
         }
 
         td {
@@ -103,13 +122,26 @@
             border-bottom: 1px solid #333;
         }
 
-        /* Ocultar secciones por defecto */
         .page-section {
             display: none;
+            animation: fadeIn 0.4s ease-out;
         }
 
         .page-section.active {
             display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
         }
     </style>
 </head>
@@ -118,24 +150,31 @@
 <div class="flex h-screen">
     <!-- Sidebar -->
     <div class="sidebar flex flex-col">
-        <div class="p-6 text-2xl font-bold italic tracking-tighter border-bottom border-gray-800">
-            MOTO<span class="text-red-600">PARTS</span>
+        <div class="p-6 border-b border-gray-800">
+            <div class="flex justify-center mb-3">
+                <img src="img/logo.png" alt="Logo MotoParts" class="h-32 w-auto">
+            </div>
+            <div class="flex items-center justify-center">
+                <span id="status-indicator" class="bg-yellow-500"></span>
+                <span id="cloud-label" class="text-[10px] text-gray-500 uppercase font-sans">Sincronizando...</span>
+            </div>
         </div>
         
         <nav class="mt-6 flex-1">
             <div class="nav-link active" onclick="showSection('dashboard', this)">
-                <span>Dashboard</span>
+                <span class="mr-3">📊</span><span>Dashboard</span>
             </div>
             <div class="nav-link" onclick="showSection('inventory', this)">
-                <span>Inventario</span>
+                <span class="mr-3">📦</span><span>Inventario</span>
             </div>
             <div class="nav-link" onclick="showSection('sales', this)">
-                <span>Registrar Venta</span>
+                <span class="mr-3">💰</span><span>Registrar Venta</span>
             </div>
         </nav>
 
-        <div class="p-6 text-xs text-gray-500">
-            v1.0 Store Management
+        <div class="p-6 text-xs text-gray-500 border-t border-gray-800">
+            v1.2 Cloud System<br>
+            Lima, Perú - 2026
         </div>
     </div>
 
@@ -143,7 +182,7 @@
     <div class="flex-1 flex flex-col overflow-hidden">
         <header class="p-4 border-b border-gray-800 flex justify-between items-center bg-black">
             <h2 id="section-title" class="text-xl font-semibold">Resumen General</h2>
-            <div id="clock" class="text-gray-400">00:00:00</div>
+            <div id="clock" class="text-gray-400 font-mono">00:00:00</div>
         </header>
 
         <main class="p-6 overflow-y-auto bg-black h-full">
@@ -152,33 +191,36 @@
             <section id="dashboard" class="page-section active">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="card p-6">
-                        <h3 class="text-gray-400 text-sm uppercase mb-2">Ventas del Día</h3>
-                        <p id="stat-sales-day" class="text-3xl font-bold">S/0.00</p>
+                        <h3 class="text-gray-400 text-sm uppercase mb-2">Ingresos Totales</h3>
+                        <p id="stat-sales-day" class="text-3xl font-bold text-white">S/0.00</p>
                     </div>
                     <div class="card p-6">
-                        <h3 class="text-gray-400 text-sm uppercase mb-2">Productos en Stock</h3>
-                        <p id="stat-total-items" class="text-3xl font-bold">0</p>
+                        <h3 class="text-gray-400 text-sm uppercase mb-2">Artículos en Stock</h3>
+                        <p id="stat-total-items" class="text-3xl font-bold text-white">0</p>
                     </div>
                     <div class="card p-6">
-                        <h3 class="text-gray-400 text-sm uppercase mb-2">ventas</h3>
-                        <p id="stat-trans-count" class="text-3xl font-bold">0</p>
+                        <h3 class="text-gray-400 text-sm uppercase mb-2">Transacciones</h3>
+                        <p id="stat-trans-count" class="text-3xl font-bold text-white">0</p>
                     </div>
                 </div>
 
                 <div class="card p-6">
-                    <h3 class="text-lg font-bold mb-4">Últimas Ventas</h3>
+                    <h3 class="text-lg font-bold mb-4 flex justify-between">
+                        <span>Últimos Movimientos</span>
+                        <span class="text-xs font-normal text-gray-500">Reciente (Top 15)</span>
+                    </h3>
                     <div class="table-container">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Fecha/Hora</th>
+                                    <th>Fecha y Hora</th>
                                     <th>Producto</th>
                                     <th>Cantidad</th>
-                                    <th>Total</th>
+                                    <th>Total Bruto</th>
                                 </tr>
                             </thead>
                             <tbody id="recent-sales-list">
-                                <!-- Datos dinámicos -->
+                                <!-- Datos inyectados por JS -->
                             </tbody>
                         </table>
                     </div>
@@ -188,31 +230,31 @@
             <!-- SECCION INVENTARIO -->
             <section id="inventory" class="page-section">
                 <div class="card p-6 mb-6">
-                    <h3 class="text-lg font-bold mb-4">Agregar Nuevo Repuesto</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <input type="text" id="inv-name" placeholder="Nombre del repuesto">
-                        <input type="number" id="inv-price" placeholder="Precio (S/)">
-                        <input type="number" id="inv-stock" placeholder="Stock inicial">
-                        <button onclick="addInventoryItem()" class="btn-red">Añadir al Stock</button>
-                    </div>
+                    <h3 class="text-lg font-bold mb-4">Registro de Nuevo Repuesto</h3>
+                    <form id="inventory-form" onsubmit="event.preventDefault(); addInventoryItem();" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <input type="text" id="inv-name" placeholder="Nombre (ej. Filtro Aire)" required>
+                        <input type="number" id="inv-price" placeholder="Precio Venta S/" step="0.10" required>
+                        <input type="number" id="inv-stock" placeholder="Stock Inicial" required>
+                        <button type="submit" class="btn-red">Registrar en Nube</button>
+                    </form>
                 </div>
 
                 <div class="card p-6">
-                    <h3 class="text-lg font-bold mb-4">Stock Actual</h3>
+                    <h3 class="text-lg font-bold mb-4">Stock de Mercancía</h3>
                     <div class="table-container">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Nombre</th>
+                                    <th>ID Firestore</th>
+                                    <th>Nombre del Item</th>
                                     <th>Precio</th>
-                                    <th>Stock</th>
+                                    <th>Cantidad</th>
                                     <th>Estado</th>
-                                    <th>Acciones</th>
+                                    <th>Operaciones</th>
                                 </tr>
                             </thead>
                             <tbody id="inventory-list">
-                                <!-- Datos dinámicos -->
+                                <!-- Datos inyectados por JS -->
                             </tbody>
                         </table>
                     </div>
@@ -221,24 +263,24 @@
 
             <!-- SECCION VENTAS -->
             <section id="sales" class="page-section">
-                <div class="card p-8 max-w-2xl mx-auto">
-                    <h3 class="text-2xl font-bold mb-6 text-center">Registrar Nueva Venta</h3>
+                <div class="card p-8 max-w-2xl mx-auto border-t-4 border-red-600">
+                    <h3 class="text-2xl font-bold mb-6 text-center italic">Punto de Venta (POS)</h3>
                     <div class="flex flex-col gap-6">
                         <div>
-                            <label class="block mb-2 text-gray-400">Seleccionar Producto</label>
-                            <select id="sale-product-select" class="w-full p-3" onchange="updateSaleTotal()">
-                                <option value="">Cargando productos...</option>
+                            <label class="block mb-2 text-gray-400 text-sm">Seleccionar Repuesto</label>
+                            <select id="sale-product-select" class="w-full p-3 text-lg" onchange="updateSaleTotal()">
+                                <option value="">Buscando productos...</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block mb-2 text-gray-400">Cantidad</label>
-                            <input type="number" id="sale-quantity" class="w-full p-3" value="1" min="1" oninput="updateSaleTotal()">
+                            <label class="block mb-2 text-gray-400 text-sm">Cantidad a Vender</label>
+                            <input type="number" id="sale-quantity" class="w-full p-3 text-lg" value="1" min="1" oninput="updateSaleTotal()">
                         </div>
-                        <div class="mt-4 p-4 bg-gray-900 rounded border border-gray-700 flex justify-between items-center">
-                            <span class="text-xl">Total a Cobrar:</span>
-                            <span id="sale-total-preview" class="text-2xl font-bold text-red-500">S/0.00</span>
+                        <div class="mt-4 p-6 bg-gray-900 rounded-lg border border-gray-700 flex justify-between items-center">
+                            <span class="text-xl uppercase tracking-widest text-gray-400">Total Neto:</span>
+                            <span id="sale-total-preview" class="text-4xl font-black text-red-500">S/0.00</span>
                         </div>
-                        <button onclick="processSale()" class="btn-red py-4 text-xl font-bold mt-4 uppercase">Completar Venta</button>
+                        <button onclick="processSale()" class="btn-red py-5 text-2xl font-bold mt-4 uppercase">Emitir Venta</button>
                     </div>
                 </div>
             </section>
@@ -248,133 +290,105 @@
 </div>
 
 <script>
-    // --- CONFIGURACIÓN DE FIREBASE ---
+    // --- FIREBASE INFRASTRUCTURE ---
     const firebaseConfig = {
         apiKey: "AIzaSyAz6z3nLWAUNvhSeAoRnmd2SWJQ4ZSmIF4",
         authDomain: "pagesfabiano.firebaseapp.com",
         projectId: "pagesfabiano",
         storageBucket: "pagesfabiano.firebasestorage.app",
         messagingSenderId: "357766649371",
-        appId: "1:357766649371:web:c96f65147bd501a3788abe",
-        measurementId: "G-LT8YK6SPP2"
+        appId: "1:357766649371:web:c96f65147bd501a3788abe"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // --- ESTADO DE LA APLICACIÓN ---
+    // Application State
     let inventory = [];
     let salesHistory = [];
 
-    // Cargar datos desde Firebase (con autenticación anónima)
-    async function loadData() {
-        try {
-            // Autenticación anónima primero
-            await auth.signInAnonymously();
-        } catch (authError) {
-            console.error('Error de autenticación:', authError);
-        }
-        
-        try {
-            // Cargar inventario
-            const inventorySnapshot = await db.collection('inventory').get();
-            inventory = inventorySnapshot.docs.map(doc => doc.data());
-            
-            // Cargar historial de ventas
-            const salesSnapshot = await db.collection('sales').orderBy('timestamp', 'desc').get();
-            salesHistory = salesSnapshot.docs.map(doc => doc.data());
-            
+    // --- CORE ENGINE (Real-time Sync) ---
+    async function startSystem() {
+    try {
+        await auth.signInAnonymously();
+        setCloudStatus('online');
+
+        db.collection('inventory').onSnapshot(snapshot => {
+            inventory = snapshot.docs.map(doc => ({ fid: doc.id, ...doc.data() })) || [];
             renderInventory();
+            updateStats();
+        }, err => {
+            console.warn("Aviso de Firestore:", err.message);
+            setCloudStatus('error');
+        });
+
+        // Escuchar ventas en tiempo real
+        db.collection('sales').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+            salesHistory = snapshot.docs.map(doc => doc.data()) || [];
             renderDashboard();
-        } catch (error) {
-            console.error('Error cargando datos:', error);
-            // Si es la primera vez, cargar datos de ejemplo
-            const defaultInventory = [
-                { id: 1, name: "Aceite Motul 7100 4T", price: 65000, stock: 24 },
-                { id: 2, name: "Pastillas de Freno NMAX", price: 45000, stock: 10 },
-                { id: 3, name: "Kit Arrastre Pulsar 200", price: 180000, stock: 5 },
-                { id: 4, name: "Bujía NGK Iridium", price: 35000, stock: 50 }
-            ];
-            inventory = defaultInventory;
-            // Guardar datos iniciales en Firebase
-            for (const item of defaultInventory) {
-                await db.collection('inventory').doc(String(item.id)).set(item);
-            }
-            renderInventory();
-            renderDashboard();
+            updateStats();
+        }, err => {
+            console.warn("Aviso de ventas:", err.message);
+        });
+
+    } catch (error) {
+        console.error("Fallo de autenticación:", error.message);
+    }
+}
+
+    function setCloudStatus(status) {
+        const indicator = document.getElementById('status-indicator');
+        const label = document.getElementById('cloud-label');
+        if(status === 'online') {
+            indicator.className = 'bg-green-500';
+            label.innerText = 'Nube Conectada';
+        } else {
+            indicator.className = 'bg-red-500';
+            label.innerText = 'Error de Enlace';
         }
     }
 
-    async function saveData() {
-        try {
-            // Guardar inventario
-            for (const item of inventory) {
-                await db.collection('inventory').doc(String(item.id)).set(item);
-            }
-            
-            // Guardar historial de ventas
-            for (const sale of salesHistory) {
-                await db.collection('sales').doc(sale.timestamp).set(sale);
-            }
-        } catch (error) {
-            console.error('Error guardando datos:', error);
-            alert('Error al guardar datos');
-        }
-    }
-
-    // --- LÓGICA DE NAVEGACIÓN ---
+    // --- VIEW LOGIC ---
     function showSection(sectionId, element) {
-        // Actualizar links del sidebar
         document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
         element.classList.add('active');
-
-        // Cambiar sección visible
         document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
         document.getElementById(sectionId).classList.add('active');
 
-        // Actualizar título
         const titles = {
-            'dashboard': 'Resumen General',
-            'inventory': 'Gestión de Inventario y Stock',
-            'sales': 'Punto de Venta (POS)'
+            'dashboard': 'Panel de Control',
+            'inventory': 'Gestión de Almacén',
+            'sales': 'Terminal de Ventas'
         };
         document.getElementById('section-title').innerText = titles[sectionId];
-        
         if(sectionId === 'sales') updateSaleSelect();
-        renderDashboard();
-        renderInventory();
     }
 
-    // --- LÓGICA DE INVENTARIO ---
+    // --- INVENTORY ENGINE ---
     function renderInventory() {
         const list = document.getElementById('inventory-list');
         list.innerHTML = '';
 
         inventory.forEach(item => {
-            const statusClass = item.stock < 5 ? 'text-red-500 font-bold' : 'text-green-500';
-            const statusText = item.stock < 5 ? 'Crítico' : 'Disponible';
-
+            const isLow = item.stock < 5;
             list.innerHTML += `
-                <tr>
-                    <td>#${item.id}</td>
-                    <td class="font-medium">${item.name}</td>
-                    <td>S/${item.price.toLocaleString()}</td>
-                    <td>${item.stock} unidades</td>
-                    <td class="${statusClass}">${statusText}</td>
+                <tr class="hover:bg-[#1a1a1a] transition-colors">
+                    <td class="text-xs text-gray-600 font-mono">#${item.fid.slice(-6)}</td>
+                    <td class="font-semibold text-gray-200">${item.name}</td>
+                    <td>S/${parseFloat(item.price).toFixed(2)}</td>
+                    <td>${item.stock} uds</td>
                     <td>
-                        <button onclick="editInventoryItem(${item.id})" class="text-blue-500 hover:text-blue-400 p-1 mr-2" title="Editar">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                        </button>
-                        <button onclick="deleteInventoryItem(${item.id})" class="text-red-500 hover:text-red-400 p-1" title="Eliminar">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                        </button>
+                        <span class="px-2 py-1 rounded text-[10px] font-bold ${isLow ? 'bg-red-900 text-red-200' : 'bg-green-900 text-green-200'}">
+                            ${isLow ? 'REABASTECER' : 'OK'}
+                        </span>
                     </td>
-                </tr>
-            `;
+                    <td>
+                        <button onclick="editItem('${item.fid}')" class="text-blue-400 hover:text-blue-200 mr-3">✎</button>
+                        <button onclick="deleteItem('${item.fid}')" class="text-red-500 hover:text-red-300">✕</button>
+                    </td>
+                </tr>`;
         });
-        
-        updateStats();
     }
 
     async function addInventoryItem() {
@@ -382,184 +396,104 @@
         const price = parseFloat(document.getElementById('inv-price').value);
         const stock = parseInt(document.getElementById('inv-stock').value);
 
-        if(!name || isNaN(price) || isNaN(stock)) return alert("Por favor completa todos los campos");
+        await db.collection('inventory').add({
+            name, price, stock,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById('inventory-form').reset();
+    }
 
-        const newItem = {
-            id: inventory.length + 1,
-            name,
-            price,
-            stock
-        };
-
-        try {
-            await db.collection('inventory').doc(String(newItem.id)).set(newItem);
-            inventory.push(newItem);
-            renderInventory();
-            
-            // Limpiar inputs
-            document.getElementById('inv-name').value = '';
-            document.getElementById('inv-price').value = '';
-            document.getElementById('inv-stock').value = '';
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al agregar producto');
+    async function deleteItem(id) {
+        if(confirm('¿Desea eliminar permanentemente este registro?')) {
+            await db.collection('inventory').doc(id).delete();
         }
     }
 
-    async function deleteInventoryItem(id) {
-        if(!confirm('¿Estás seguro de eliminar este producto?')) return;
-        
-        try {
-            await db.collection('inventory').doc(String(id)).delete();
-            inventory = inventory.filter(item => item.id !== id);
-            renderInventory();
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al eliminar producto');
+    async function editItem(id) {
+        const item = inventory.find(p => p.fid === id);
+        const nP = prompt("Nuevo Precio (S/):", item.price);
+        const nS = prompt("Nuevo Stock (unidades):", item.stock);
+        if(nP !== null && nS !== null) {
+            await db.collection('inventory').doc(id).update({
+                price: parseFloat(nP),
+                stock: parseInt(nS)
+            });
         }
     }
 
-    async function editInventoryItem(id) {
-        const item = inventory.find(p => p.id === id);
-        if(!item) return;
-        
-        const newName = prompt('Nuevo nombre:', item.name);
-        if(newName === null) return;
-        
-        const newPrice = prompt('Nuevo precio:', item.price);
-        if(newPrice === null) return;
-        
-        const newStock = prompt('Nuevo stock:', item.stock);
-        if(newStock === null) return;
-        
-        item.name = newName || item.name;
-        item.price = parseFloat(newPrice) || item.price;
-        item.stock = parseInt(newStock) || item.stock;
-        
-        try {
-            await db.collection('inventory').doc(String(id)).update(item);
-            renderInventory();
-            alert('Producto actualizado');
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al actualizar producto');
-        }
-    }
-
-    // --- LÓGICA DE VENTAS ---
-    function updateSaleTotal() {
-        const productId = parseInt(document.getElementById('sale-product-select').value);
-        const qty = parseInt(document.getElementById('sale-quantity').value) || 1;
-        const totalPreview = document.getElementById('sale-total-preview');
-        
-        if(!productId) {
-            totalPreview.innerText = 'S/0.00';
-            return;
-        }
-        
-        const product = inventory.find(p => p.id === productId);
-        if(!product) {
-            totalPreview.innerText = 'S/0.00';
-            return;
-        }
-        
-        const total = product.price * qty;
-        totalPreview.innerText = 'S/' + total.toLocaleString();
-    }
-
+    // --- SALES ENGINE ---
     function updateSaleSelect() {
         const select = document.getElementById('sale-product-select');
-        select.innerHTML = '<option value="">-- Selecciona Repuesto --</option>';
-        
+        select.innerHTML = '<option value="">-- Elige un producto --</option>';
         inventory.forEach(item => {
             if(item.stock > 0) {
-                select.innerHTML += `<option value="${item.id}">${item.name} - (S/${item.price.toLocaleString()}) [Stock: ${item.stock}]</option>`;
+                select.innerHTML += `<option value="${item.fid}">${item.name} (S/${item.price})</option>`;
             }
         });
-        
-        // Resetear el total
-        document.getElementById('sale-total-preview').innerText = 'S/0.00';
+    }
+
+    function updateSaleTotal() {
+        const id = document.getElementById('sale-product-select').value;
+        const qty = parseInt(document.getElementById('sale-quantity').value) || 0;
+        const prod = inventory.find(p => p.fid === id);
+        const total = prod ? (prod.price * qty) : 0;
+        document.getElementById('sale-total-preview').innerText = `S/${total.toFixed(2)}`;
     }
 
     async function processSale() {
-        const productId = parseInt(document.getElementById('sale-product-select').value);
+        const id = document.getElementById('sale-product-select').value;
         const qty = parseInt(document.getElementById('sale-quantity').value);
+        const product = inventory.find(p => p.fid === id);
 
-        if(!productId || isNaN(qty)) return alert("Selecciona un producto y cantidad válida");
+        if(!product || qty > product.stock) return alert("Verifique stock disponible");
 
-        const product = inventory.find(p => p.id === productId);
+        const total = product.price * qty;
 
-        if(!product) return alert("Producto no encontrado en el inventario");
+        // Atomic Transaction (Simulado)
+        await db.collection('inventory').doc(id).update({ stock: product.stock - qty });
+        await db.collection('sales').add({
+            productName: product.name,
+            quantity: qty,
+            total: total,
+            timestamp: new Date().toLocaleString(),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-        if(qty > product.stock) return alert("No hay suficiente stock disponible");
-
-        try {
-            // Descontar Stock automáticamente
-            product.stock -= qty;
-            await db.collection('inventory').doc(String(product.id)).update({ stock: product.stock });
-
-            // Registrar venta
-            const sale = {
-                timestamp: new Date().toLocaleString(),
-                productName: product.name,
-                quantity: qty,
-                total: product.price * qty
-            };
-
-            await db.collection('sales').doc(sale.timestamp).set(sale);
-            salesHistory.unshift(sale);
-            
-            alert("Venta procesada con éxito");
-            
-            // Resetear vista
-            document.getElementById('sale-quantity').value = 1;
-            updateSaleSelect();
-            renderDashboard();
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al procesar venta');
-        }
+        alert("Venta Completada con Éxito");
+        document.getElementById('sale-quantity').value = 1;
+        updateSaleTotal();
     }
 
-    // --- LÓGICA DE DASHBOARD ---
+    // --- DASHBOARD ENGINE ---
     function renderDashboard() {
-        const recentList = document.getElementById('recent-sales-list');
-        recentList.innerHTML = '';
-
-        salesHistory.slice(0, 10).forEach(sale => {
-            recentList.innerHTML += `
+        const list = document.getElementById('recent-sales-list');
+        list.innerHTML = '';
+        salesHistory.slice(0, 15).forEach(sale => {
+            list.innerHTML += `
                 <tr>
-                    <td class="text-gray-500">${sale.timestamp}</td>
+                    <td class="text-gray-500 font-mono text-xs">${sale.timestamp}</td>
                     <td>${sale.productName}</td>
                     <td>${sale.quantity}</td>
-                    <td class="text-green-400 font-bold">S/${sale.total.toLocaleString()}</td>
-                </tr>
-            `;
+                    <td class="text-green-500 font-bold">S/${parseFloat(sale.total).toFixed(2)}</td>
+                </tr>`;
         });
-        
-        updateStats();
     }
 
     function updateStats() {
-        const totalSales = salesHistory.reduce((acc, curr) => acc + curr.total, 0);
-        const totalItems = inventory.reduce((acc, curr) => acc + curr.stock, 0);
+        const totalMoney = salesHistory.reduce((acc, s) => acc + s.total, 0);
+        const totalStock = inventory.reduce((acc, i) => acc + i.stock, 0);
         
-        document.getElementById('stat-sales-day').innerText = `S/${totalSales.toLocaleString()}`;
-        document.getElementById('stat-total-items').innerText = totalItems;
+        document.getElementById('stat-sales-day').innerText = `S/${totalMoney.toLocaleString()}`;
+        document.getElementById('stat-total-items').innerText = totalStock;
         document.getElementById('stat-trans-count').innerText = salesHistory.length;
     }
 
-    // Reloj
+    // Global Utilities
     setInterval(() => {
-        const now = new Date();
-        document.getElementById('clock').innerText = now.toLocaleTimeString();
+        document.getElementById('clock').innerText = new Date().toLocaleTimeString();
     }, 1000);
 
-    // Inicialización
-    window.onload = async () => {
-        await loadData();
-    };
-
+    window.onload = startSystem;
 </script>
 </body>
 </html>
