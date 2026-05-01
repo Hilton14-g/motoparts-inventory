@@ -158,13 +158,13 @@
         
         <nav class="mt-6 flex-1">
             <div class="nav-link active" onclick="showSection('dashboard', this)">
-                <span class="mr-3">📊</span><span>Dashboard</span>
+                <span class="mr-3"></span><span>Dashboard</span>
             </div>
             <div class="nav-link" onclick="showSection('inventory', this)">
-                <span class="mr-3">📦</span><span>Inventario</span>
+                <span class="mr-3"></span><span>Inventario</span>
             </div>
             <div class="nav-link" onclick="showSection('sales', this)">
-                <span class="mr-3">💰</span><span>Registrar Venta</span>
+                <span class="mr-3"></span><span>Registrar Venta</span>
             </div>
         </nav>
 
@@ -212,7 +212,7 @@
                                     <th>Fecha y Hora</th>
                                     <th>Producto</th>
                                     <th>Cantidad</th>
-                                    <th>Total Bruto</th>
+                                    <th>Total</th>
                                 </tr>
                             </thead>
                             <tbody id="recent-sales-list">
@@ -266,7 +266,7 @@
             <!-- SECCION VENTAS -->
             <section id="sales" class="page-section">
                 <div class="card p-8 max-w-2xl mx-auto border-t-4 border-red-600">
-                    <h3 class="text-2xl font-bold mb-6 text-center italic">Punto de Venta (POS)</h3>
+                    <h3 class="text-2xl font-bold mb-6 text-center italic">Punto de Venta</h3>
                     <div class="flex flex-col gap-6">
                         <div>
                             <label class="block mb-2 text-gray-400 text-sm">Seleccionar Repuesto</label>
@@ -402,7 +402,7 @@
         const titles = {
             'dashboard': 'Panel de Control',
             'inventory': 'Gestión de Almacén',
-            'sales': 'Terminal de Ventas'
+            'sales': 'Punto de Venta'
         };
         document.getElementById('section-title').innerText = titles[sectionId];
         if(sectionId === 'sales') updateSaleSelect();
