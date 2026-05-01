@@ -336,6 +336,8 @@
     function setCloudStatus(status) {
         const indicator = document.getElementById('status-indicator');
         const label = document.getElementById('cloud-label');
+        if(!indicator || !label) return; // Elementos no existen, salir
+        
         if(status === 'online') {
             indicator.className = 'bg-green-500';
             label.innerText = 'Nube Conectada';
