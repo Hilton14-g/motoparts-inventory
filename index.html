@@ -265,24 +265,24 @@
 
             <!-- SECCION VENTAS -->
             <section id="sales" class="page-section">
-                <div class="card p-8 border-t-4 border-red-600">
+                <div class="card p-8 border-t-4 border-red-600 w-full">
                     <h3 class="text-2xl font-bold mb-6 text-center italic">Punto de Venta</h3>
-                    <div class="flex flex-col gap-6">
-                        <div>
+                    <div class="flex flex-col gap-6 w-full">
+                        <div class="w-full">
                             <label class="block mb-2 text-gray-400 text-sm">Seleccionar Repuesto</label>
                             <select id="sale-product-select" class="w-full p-3 text-lg" onchange="updateSaleTotal()">
                                 <option value="">Buscando productos...</option>
                             </select>
                         </div>
-                        <div>
+                        <div class="w-full">
                             <label class="block mb-2 text-gray-400 text-sm">Cantidad a Vender</label>
                             <input type="number" id="sale-quantity" class="w-full p-3 text-lg" value="1" min="1" oninput="updateSaleTotal()">
                         </div>
-                        <div class="mt-4 p-6 bg-gray-900 rounded-lg border border-gray-700 flex justify-between items-center">
+                        <div class="mt-4 p-6 bg-gray-900 rounded-lg border border-gray-700 flex justify-between items-center w-full">
                             <span class="text-xl uppercase tracking-widest text-gray-400">Total Neto:</span>
                             <span id="sale-total-preview" class="text-4xl font-black text-red-500">S/0.00</span>
                         </div>
-                        <button onclick="processSale()" class="btn-red py-5 text-2xl font-bold mt-4 uppercase">Emitir Venta</button>
+                        <button onclick="processSale()" class="btn-red py-5 text-2xl font-bold mt-4 uppercase w-full">Emitir Venta</button>
                     </div>
                 </div>
             </section>
