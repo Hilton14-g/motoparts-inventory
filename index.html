@@ -268,9 +268,10 @@
                     <h3 class="text-2xl font-bold mb-6 text-center italic">Punto de Venta</h3>
                     <div class="flex flex-col gap-6 w-full">
                         <div class="w-full">
-                            <label class="block mb-2 text-gray-400 text-sm">Seleccionar Repuesto</label>
+                            <label class="block mb-2 text-gray-400 text-sm">Buscar y Seleccionar Repuesto</label>
+                            <input type="text" id="sale-search" placeholder="Escribe para buscar producto..." class="w-full p-3 text-lg mb-2 bg-[#222] border border-[#444] rounded" oninput="filterSaleProducts()">
                             <select id="sale-product-select" class="w-full p-3 text-lg" onchange="updateSaleTotal()">
-                                <option value="">Buscando productos...</option>
+                                <option value="">-- Elige un producto --</option>
                             </select>
                         </div>
                         <div class="w-full">
@@ -485,14 +486,23 @@
     }
 
     // --- SALES ENGINE ---
-    function updateSaleSelect() {
+    function updateSaleSelect(filteredItems = null) {
         const select = document.getElementById('sale-product-select');
+        const itemsToShow = filteredItems || inventory.filter(item => item.stock > 0);
         select.innerHTML = '<option value="">-- Elige un producto --</option>';
-        inventory.forEach(item => {
+        itemsToShow.forEach(item => {
             if(item.stock > 0) {
                 select.innerHTML += `<option value="${item.fid}">${item.name} (S/${item.price})</option>`;
             }
         });
+    }
+
+    function filterSaleProducts() {
+        const searchTerm = document.getElementById('sale-search')?.value.toLowerCase() || '';
+        const filtered = searchTerm
+            ? inventory.filter(item => item.stock > 0 && item.name.toLowerCase().includes(searchTerm))
+            : inventory.filter(item => item.stock > 0);
+        updateSaleSelect(filtered);
     }
 
     function updateSaleTotal() {
