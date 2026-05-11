@@ -267,12 +267,11 @@
                 <div class="card p-8 border-t-4 border-red-600 w-full">
                     <h3 class="text-2xl font-bold mb-6 text-center italic">Punto de Venta</h3>
                     <div class="flex flex-col gap-6 w-full">
-                        <div class="w-full">
+                        <div class="w-full relative">
                             <label class="block mb-2 text-gray-400 text-sm">Buscar y Seleccionar Repuesto</label>
-                            <input type="text" id="sale-search" placeholder="Escribe para buscar producto..." class="w-full p-3 text-lg mb-2 bg-[#222] border border-[#444] rounded" oninput="filterSaleProducts()">
-                            <select id="sale-product-select" class="w-full p-3 text-lg" onchange="updateSaleTotal()">
-                                <option value="">-- Elige un producto --</option>
-                            </select>
+                            <input type="text" id="sale-product-input" placeholder="Escribe para buscar producto..." class="w-full p-3 text-lg bg-[#222] border border-[#444] rounded" oninput="handleSaleSearch(this.value)" onfocus="showSaleDropdown()" autocomplete="off">
+                            <input type="hidden" id="sale-product-select" value="">
+                            <div id="sale-dropdown" class="hidden absolute z-50 w-full mt-1 bg-[#222] border border-[#444] rounded max-h-60 overflow-y-auto"></div>
                         </div>
                         <div class="w-full">
                             <label class="block mb-2 text-gray-400 text-sm">Cantidad a Vender</label>
@@ -486,32 +485,62 @@
     }
 
     // --- SALES ENGINE ---
-    function updateSaleSelect(filteredItems = null) {
-        const select = document.getElementById('sale-product-select');
-        const itemsToShow = filteredItems || inventory.filter(item => item.stock > 0);
-        select.innerHTML = '<option value="">-- Elige un producto --</option>';
-        itemsToShow.forEach(item => {
-            if(item.stock > 0) {
-                select.innerHTML += `<option value="${item.fid}">${item.name} (S/${item.price})</option>`;
-            }
-        });
+    let selectedSaleProduct = null;
+
+    function showSaleDropdown() {
+        const dropdown = document.getElementById('sale-dropdown');
+        const items = inventory.filter(item => item.stock > 0);
+        renderSaleDropdown(items);
+        dropdown.classList.remove('hidden');
     }
 
-    function filterSaleProducts() {
-        const searchTerm = document.getElementById('sale-search')?.value.toLowerCase() || '';
-        const filtered = searchTerm
-            ? inventory.filter(item => item.stock > 0 && item.name.toLowerCase().includes(searchTerm))
+    function handleSaleSearch(searchTerm) {
+        const dropdown = document.getElementById('sale-dropdown');
+        const term = searchTerm.toLowerCase();
+        const items = term
+            ? inventory.filter(item => item.stock > 0 && item.name.toLowerCase().includes(term))
             : inventory.filter(item => item.stock > 0);
-        updateSaleSelect(filtered);
+        renderSaleDropdown(items);
+        dropdown.classList.remove('hidden');
+    }
+
+    function renderSaleDropdown(items) {
+        const dropdown = document.getElementById('sale-dropdown');
+        if (items.length === 0) {
+            dropdown.innerHTML = '<div class="p-3 text-gray-500">No se encontraron productos</div>';
+            return;
+        }
+        dropdown.innerHTML = items.map(item => `
+            <div onclick="selectSaleProduct('${item.fid}', '${item.name.replace(/'/g, "\\'")}', ${item.price})" 
+                 class="p-3 hover:bg-[#333] cursor-pointer border-b border-[#444] last:border-0">
+                <div class="font-semibold">${item.name}</div>
+                <div class="text-sm text-gray-400">S/${item.price} - Stock: ${item.stock}</div>
+            </div>
+        `).join('');
+    }
+
+    function selectSaleProduct(fid, name, price) {
+        document.getElementById('sale-product-input').value = name;
+        document.getElementById('sale-product-select').value = fid;
+        selectedSaleProduct = { fid, name, price };
+        document.getElementById('sale-dropdown').classList.add('hidden');
+        updateSaleTotal();
     }
 
     function updateSaleTotal() {
-        const id = document.getElementById('sale-product-select').value;
         const qty = parseInt(document.getElementById('sale-quantity').value) || 0;
-        const prod = inventory.find(p => p.fid === id);
+        const prod = selectedSaleProduct;
         const total = prod ? (prod.price * qty) : 0;
         document.getElementById('sale-total-preview').innerText = `S/${total.toFixed(2)}`;
     }
+
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        const container = document.getElementById('sale-product-input')?.parentElement;
+        if (container && !container.contains(e.target)) {
+            document.getElementById('sale-dropdown')?.classList.add('hidden');
+        }
+    });
 
     async function processSale() {
         const id = document.getElementById('sale-product-select').value;
